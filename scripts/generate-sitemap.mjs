@@ -47,6 +47,7 @@ function escapeXml(text) {
 
 const STATIC_ENTRIES = [
   { loc: `${BASE_URL}/`, changefreq: 'daily', priority: '1.0' },
+  { loc: `${BASE_URL}/gioi-thieu`, changefreq: 'monthly', priority: '0.8' },
   { loc: `${BASE_URL}/bookmarks`, changefreq: 'weekly', priority: '0.6' }
 ];
 

@@ -14,8 +14,8 @@ import {
 import { AuthUser, signOut } from '../lib/supabase';
 
 interface HeaderProps {
-  currentView: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks';
-  onNavigate: (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks', slug?: string) => void;
+  currentView: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks' | 'about';
+  onNavigate: (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks' | 'about', slug?: string) => void;
   currentUser: AuthUser | null;
   onOpenAuth: () => void;
   onOpenSupabaseModal: () => void;
@@ -259,6 +259,24 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Bookmark size={15} />
               <span>Đã Lưu ({bookmarksCount})</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('about')}
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontWeight: currentView === 'about' ? 700 : 500,
+                fontSize: '0.9rem',
+                color: currentView === 'about' ? 'var(--accent-primary)' : 'var(--text-primary)',
+                borderBottom: currentView === 'about' ? '2px solid var(--accent-primary)' : 'none',
+                paddingBottom: '3px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}
+            >
+              <UserIcon size={15} />
+              <span>Về Tác Giả</span>
             </button>
 
             {currentUser && (

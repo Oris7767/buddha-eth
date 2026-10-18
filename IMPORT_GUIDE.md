@@ -58,3 +58,12 @@ npm run dev        # http://localhost:5173
 npm run build      # kiểm tra type + bundle
 npx vite preview --port 4173
 ```
+
+---
+
+## Trang giới thiệu tác giả (2026-10-19)
+
+- Nội dung nằm ở **`src/data/author.json`** — sửa bio/timeline/quote ở đây, cả trang React lẫn trang tĩnh đều đọc chung file này.
+- UI: `src/components/AuthorPage.tsx`, route `/gioi-thieu`, có mục **"Về Tác Giả"** trên thanh điều hướng.
+- Build sinh thêm `dist/gioi-thieu.html` với meta + Schema.org `Person` + bản `<noscript>` đầy đủ cho crawler.
+- `_redirects`: `/gioi-thieu → /gioi-thieu.html 200`. Sitemap: thêm route `/gioi-thieu` (priority 0.8).

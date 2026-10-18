@@ -14,6 +14,7 @@ import { PostEditor } from './components/PostEditor';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SupabaseModal } from './components/SupabaseModal';
 import { AuthModal } from './components/AuthModal';
+import { AuthorPage } from './components/AuthorPage';
 import { Footer } from './components/Footer';
 import { INITIAL_CATEGORIES } from './data/samplePosts';
 import { Bookmark, Sparkles, Filter, PenLine, BookOpen } from 'lucide-react';
@@ -25,7 +26,7 @@ const STORAGE_KEY_THEME = 'classical_gazette_theme';
 export function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'home' | 'post' | 'editor' | 'admin' | 'bookmarks'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'post' | 'editor' | 'admin' | 'bookmarks' | 'about'>('home');
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
 
@@ -76,6 +77,8 @@ export function App() {
         setSelectedSlug(slug);
         setCurrentView('post');
       }
+    } else if (path === '/gioi-thieu' || path === '/gioi-thieu/') {
+      setCurrentView('about');
     }
   }, []);
 
@@ -105,7 +108,7 @@ export function App() {
     });
   };
 
-  const handleNavigate = (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks', slug?: string) => {
+  const handleNavigate = (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks' | 'about', slug?: string) => {
     if ((view === 'editor' || view === 'admin') && !currentUser) {
       setIsAuthOpen(true);
       return;
@@ -114,6 +117,10 @@ export function App() {
     if (view === 'post' && slug) {
       setSelectedSlug(slug);
       window.history.pushState({}, '', `/post/${slug}`);
+    } else if (view === 'about') {
+      setSelectedSlug(null);
+      setEditingPost(null);
+      window.history.pushState({}, '', '/gioi-thieu');
     } else if (view === 'home') {
       setSelectedSlug(null);
       setEditingPost(null);
@@ -305,6 +312,10 @@ export function App() {
         )}
 
         {/* VIEW 5: HOME FRONT PAGE */}
+        {currentView === 'about' && (
+          <AuthorPage onBack={() => handleNavigate('home')} />
+        )}
+
         {currentView === 'home' && (
           <div className="container" style={{ padding: '1.5rem 1.5rem 4rem 1.5rem' }}>
             {/* Featured Hero Story (only if no active search) */}

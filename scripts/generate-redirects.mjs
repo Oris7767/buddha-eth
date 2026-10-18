@@ -29,6 +29,9 @@ const lines = [
   '# Netlify evaluation order: First match wins',
   '# ==========================================================================',
   '# Netlify automatically handles HTTPS and SSL certificates.',
+  '# Static core pages',
+  '/gioi-thieu                                 /gioi-thieu.html    200',
+  '',
   '# Pre-rendered static article pages (200 rewrites for SEO crawlers)'
 ];
 

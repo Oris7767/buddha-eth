@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const distDir = join(rootDir, 'dist');
+const AUTHOR = JSON.parse(readFileSync(join(rootDir, 'src', 'data', 'author.json'), 'utf8'));
 
 const BASE_URL = process.env.URL || 'https://buddhaseth.site';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=1200&q=80';
@@ -147,6 +148,69 @@ function injectMetaAndContent(templateHtml, post) {
   return html;
 }
 
+function generateAuthorHtml(templateHtml) {
+  let html = templateHtml;
+  const canonicalUrl = `${BASE_URL}/gioi-thieu`;
+  const pageTitle = `Về tác giả — ${AUTHOR.realName} (${AUTHOR.penName}) | BUDDHA.ETH GAZETTE`;
+  const pageDescription = AUTHOR.lead.slice(0, 155);
+  const pageImage = DEFAULT_IMAGE;
+
+  html = html.replace(/<title>.*?<\/title>/i, `<title>${pageTitle}</title>`);
+  html = html.replace(/<meta name="description" content=".*?" \/>/i, `<meta name="description" content="${pageDescription}" />`);
+  html = html.replace(/<meta name="title" content=".*?" \/>/i, `<meta name="title" content="${pageTitle}" />`);
+  html = html.replace(/<link rel="canonical" href=".*?" \/>/i, `<link rel="canonical" href="${canonicalUrl}" />`);
+  html = html.replace(/<meta property="og:type" content=".*?" \/>/i, '<meta property="og:type" content="profile" />');
+  html = html.replace(/<meta property="og:url" content=".*?" \/>/i, `<meta property="og:url" content="${canonicalUrl}" />`);
+  html = html.replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${pageTitle}" />`);
+  html = html.replace(/<meta property="og:description" content=".*?" \/>/i, `<meta property="og:description" content="${pageDescription}" />`);
+  html = html.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${pageImage}" />`);
+  html = html.replace(/<meta property="twitter:url" content=".*?" \/>/i, `<meta property="twitter:url" content="${canonicalUrl}" />`);
+  html = html.replace(/<meta property="twitter:title" content=".*?" \/>/i, `<meta property="twitter:title" content="${pageTitle}" />`);
+  html = html.replace(/<meta property="twitter:description" content=".*?" \/>/i, `<meta property="twitter:description" content="${pageDescription}" />`);
+  html = html.replace(/<meta property="twitter:image" content=".*?" \/>/i, `<meta property="twitter:image" content="${pageImage}" />`);
+
+  const personSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: AUTHOR.realName,
+    alternateName: AUTHOR.penName,
+    birthDate: String(AUTHOR.birthYear),
+    birthPlace: { '@type': 'Place', name: AUTHOR.hometown },
+    jobTitle: AUTHOR.role,
+    description: AUTHOR.lead,
+    url: canonicalUrl,
+    sameAs: [AUTHOR.profileUrl]
+  };
+
+  const schemaScript = `\n    <!-- Schema.org Person -->\n    <script type="application/ld+json">\n    ${JSON.stringify(personSchema, null, 2)}\n    </script>`;
+  html = html.replace('</head>', `${schemaScript}\n  </head>`);
+
+  const sectionsHtml = AUTHOR.sections
+    .map(s => `<h2>${s.heading}</h2>${s.paragraphs.map(p => `<p>${p}</p>`).join('')}`)
+    .join('');
+  const timelineHtml = AUTHOR.milestones
+    .map(m => `<li><strong>${m.year} — ${m.title}:</strong> ${m.text}</li>`)
+    .join('');
+
+  const noscriptContent = `
+    <noscript>
+      <article style="max-width: 740px; margin: 40px auto; padding: 20px; font-family: Georgia, serif; line-height: 1.8;">
+        <h1>${AUTHOR.penName} — ${AUTHOR.realName}</h1>
+        <p><em>${AUTHOR.tagline}</em></p>
+        <p>Tên thật: <strong>${AUTHOR.realName}</strong> · Sinh năm ${AUTHOR.birthYear} · Quê: ${AUTHOR.hometown}</p>
+        <p>${AUTHOR.lead}</p>
+        ${sectionsHtml}
+        <blockquote><p>${AUTHOR.quote}</p><footer>— ${AUTHOR.quoteSource}</footer></blockquote>
+        <h2>Dòng thời gian</h2>
+        <ul>${timelineHtml}</ul>
+      </article>
+    </noscript>
+  `;
+  html = html.replace('<div id="root"></div>', `<div id="root">${noscriptContent}</div>`);
+
+  return html;
+}
+
 function generate404Html() {
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -232,6 +296,11 @@ async function main() {
     console.log(`  ✅ Generated /${flatFileName} for /post/${post.slug}`);
     generated++;
   }
+
+  // Generate /gioi-thieu (about the author) prerender
+  const authorPath = join(distDir, 'gioi-thieu.html');
+  writeFileSync(authorPath, generateAuthorHtml(template), 'utf8');
+  console.log('  ✅ Generated /gioi-thieu.html for /gioi-thieu');
 
   // Generate .404.html for Netlify
   const notFoundPath = join(distDir, '.404.html');
