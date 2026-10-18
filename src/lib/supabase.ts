@@ -124,8 +124,8 @@ export async function fetchPostBySlug(slug: string): Promise<Post | null> {
         .single();
 
       if (!error && data) {
-        // Increment views count
-        client.from('posts').update({ views_count: (data.views_count || 0) + 1 }).eq('id', data.id);
+        // Increment views count safely via RPC (SECURITY DEFINER)
+        Promise.resolve(client.rpc('increment_post_views', { target_post_id: data.id })).catch(() => {});
         return data as Post;
       }
     } catch (err) {
