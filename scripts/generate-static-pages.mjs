@@ -57,28 +57,16 @@ async function fetchPosts() {
     }
   }
 
-  // Fallback to sample posts
+  // Fallback to archive posts imported from X
   try {
-    const sampleFilePath = join(rootDir, 'src', 'data', 'samplePosts.ts');
-    if (existsSync(sampleFilePath)) {
-      const tsCode = readFileSync(sampleFilePath, 'utf8');
-      // Simple parse of initial posts
-      const jsonStart = tsCode.indexOf('INITIAL_POSTS: Post[] = [');
-      if (jsonStart !== -1) {
-        // Extract array via regex
-        const matches = [...tsCode.matchAll(/title:\s*['"]([^'"]+)['"][\s\S]*?slug:\s*['"]([^'"]+)['"][\s\S]*?excerpt:\s*['"]([^'"]+)['"][\s\S]*?cover_image:\s*['"]([^'"]+)['"]/g)];
-        return matches.map((m, idx) => ({
-          id: 'post-' + (idx + 1),
-          title: m[1],
-          slug: m[2],
-          excerpt: m[3],
-          cover_image: m[4],
-          author_name: 'Buddha.eth',
-          created_at: new Date().toISOString()
-        }));
-      }
+    const archivePath = join(rootDir, 'public', 'archive-posts.json');
+    if (existsSync(archivePath)) {
+      const all = JSON.parse(readFileSync(archivePath, 'utf8'));
+      return all.filter(p => p.status === 'published' && p.slug);
     }
-  } catch {}
+  } catch (err) {
+    console.warn('  ⚠️  Could not read archive-posts.json:', err.message);
+  }
   return [];
 }
 

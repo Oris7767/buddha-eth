@@ -57,17 +57,24 @@ export function getSupabaseClient(): SupabaseClient | null {
 function getLocalPosts(): Post[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_POSTS);
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed: Post[] = JSON.parse(data);
+      // Clean out any old mock posts (post-1, post-2, post-3)
+      const cleaned = parsed.filter((p) => !['post-1', 'post-2', 'post-3'].includes(p.id));
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(cleaned));
+      }
+      return cleaned;
+    }
   } catch (err) {
     console.error('Failed to parse local posts:', err);
   }
-  // Initialize with initial posts
-  localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(INITIAL_POSTS));
-  return INITIAL_POSTS;
+  return [];
 }
 
 function saveLocalPosts(posts: Post[]): void {
-  localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(posts));
+  const cleaned = posts.filter((p) => !['post-1', 'post-2', 'post-3'].includes(p.id));
+  localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(cleaned));
 }
 
 // ----------------- ARCHIVE (bài cào từ X, đóng gói tĩnh) -----------------
@@ -89,8 +96,9 @@ export async function getArchivePosts(): Promise<Post[]> {
 }
 
 function mergePosts(archive: Post[], local: Post[]): Post[] {
-  const seen = new Set(local.map((p) => p.id));
-  return [...local, ...archive.filter((p) => !seen.has(p.id))];
+  const cleanLocal = local.filter((p) => !['post-1', 'post-2', 'post-3'].includes(p.id));
+  const seen = new Set(cleanLocal.map((p) => p.id));
+  return [...cleanLocal, ...archive.filter((p) => !seen.has(p.id))];
 }
 
 // ----------------- POSTS API (SUPABASE WITH FALLBACK) -----------------

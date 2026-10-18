@@ -73,18 +73,20 @@ async function fetchPostsFromSupabase() {
 
 function getFallbackPosts() {
   try {
-    // Read samplePosts.ts
-    const sampleFilePath = join(rootDir, 'src', 'data', 'samplePosts.ts');
-    if (existsSync(sampleFilePath)) {
-      const content = readFileSync(sampleFilePath, 'utf8');
-      const slugs = [...content.matchAll(/slug:\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
-      return slugs.map(slug => ({
-        slug,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
+    const archivePath = join(rootDir, 'public', 'archive-posts.json');
+    if (existsSync(archivePath)) {
+      const all = JSON.parse(readFileSync(archivePath, 'utf8'));
+      return all
+        .filter(p => p.status === 'published' && p.slug && !['all', 'chiem-tinh-noi-mon', 'triet-hoc-tinh-thuc', 'tam-ly-hoc-chieu-sau', 'chu-ky-vu-tru-thoi-cuoc'].includes(p.slug))
+        .map(p => ({
+          slug: p.slug,
+          created_at: p.created_at || TODAY,
+          updated_at: p.updated_at || p.created_at || TODAY
+        }));
     }
-  } catch {}
+  } catch (err) {
+    console.warn('  ⚠️  Could not read archive-posts.json:', err.message);
+  }
   return [];
 }
 
