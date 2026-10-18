@@ -286,6 +286,10 @@ def main() -> None:
     ap.add_argument("--include-trading", action="store_true", help="gồm cả bài trading thuần")
     ap.add_argument("--include-short-other", action="store_true")
     ap.add_argument("--include-replies", action="store_true", help="gồm cả reply/hội thoại")
+    ap.add_argument(
+        "--exclude-ids",
+        help="file JSON chứa mảng id bài đã xoá trên web (tải từ Admin → Tải ID) — sẽ không import lại",
+    )
     args = ap.parse_args()
 
     raw = json.load(open(args.json_path))
@@ -295,8 +299,15 @@ def main() -> None:
 
     used: set[str] = set()
     seen_text: set[str] = set()
+    excluded: set[str] = set()
+    if args.exclude_ids:
+        excluded = set(json.load(open(args.exclude_ids)))
+        print(f"loại trừ {len(excluded)} id đã xoá trên web")
     posts, skipped = [], Counter()
     for ch in chains:
+        if f"tw-{ch[0]['id']}" in excluded:
+            skipped["đã xoá trên web (bỏ)"] += 1
+            continue
         if is_self_retweet(ch):
             skipped["self-retweet (bỏ)"] += 1
             continue

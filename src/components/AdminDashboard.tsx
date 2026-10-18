@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Post } from '../types/blog';
 import { 
   PenLine, 
@@ -12,9 +12,11 @@ import {
   Clock, 
   TrendingUp, 
   Database,
-  ArrowUpRight
+  ArrowUpRight,
+  RotateCcw,
+  ArchiveRestore
 } from 'lucide-react';
-import { deletePost, updatePost } from '../lib/supabase';
+import { deletePost, updatePost, getHiddenPostIds, getArchivePosts, unhidePost, restoreAllHiddenPosts } from '../lib/supabase';
 
 interface AdminDashboardProps {
   posts: Post[];
@@ -37,6 +39,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all');
   const [adminSearch, setAdminSearch] = useState('');
+  const [hiddenPosts, setHiddenPosts] = useState<Post[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const ids = getHiddenPostIds();
+      if (!ids.length) {
+        setHiddenPosts([]);
+        return;
+      }
+      const all = await getArchivePosts(true);
+      const set = new Set(ids);
+      setHiddenPosts(all.filter((p) => set.has(p.id)));
+    })();
+  }, []);
+
+  const handleRestore = (id: string) => {
+    unhidePost(id);
+    setHiddenPosts((prev) => prev.filter((p) => p.id !== id));
+    window.location.reload();
+  };
+
+  const handleRestoreAll = () => {
+    restoreAllHiddenPosts();
+    setHiddenPosts([]);
+    window.location.reload();
+  };
+
+  const handleExportHidden = () => {
+    const ids = getHiddenPostIds();
+    const blob = new Blob([JSON.stringify(ids, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'deleted-post-ids.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Calculations
   const totalPosts = posts.length;
@@ -185,6 +225,79 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tương tác của độc giả</div>
         </div>
       </div>
+
+      {/* Thùng rác — bài đã xoá (có thể khôi phục) */}
+      {hiddenPosts.length > 0 && (
+        <div
+          style={{
+            border: '1px dashed var(--border-subtle)',
+            backgroundColor: 'var(--bg-secondary)',
+            padding: '0.9rem 1.1rem',
+            marginBottom: '1.75rem',
+            fontSize: '0.88rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-secondary)' }}>
+              <ArchiveRestore size={16} />
+              <strong>{hiddenPosts.length}</strong> bài đã xoá khỏi website
+            </span>
+            <span style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setShowHidden((v) => !v)}
+                className="btn-classic-secondary"
+                style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                {showHidden ? 'Ẩn danh sách' : 'Xem danh sách'}
+              </button>
+              <button
+                onClick={handleRestoreAll}
+                className="btn-classic-secondary"
+                style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <RotateCcw size={14} /> Khôi phục tất cả
+              </button>
+              <button
+                onClick={handleExportHidden}
+                className="btn-classic-secondary"
+                style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                Tải ID
+              </button>
+            </span>
+          </div>
+
+          {showHidden && (
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0.9rem 0 0 0' }}>
+              {hiddenPosts.map((p) => (
+                <li
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    padding: '0.5rem 0',
+                    borderTop: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem' }}>{p.created_at.slice(0, 10)}</span>
+                    {p.title}
+                  </span>
+                  <button
+                    onClick={() => handleRestore(p.id)}
+                    className="btn-classic-secondary"
+                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                  >
+                    Khôi phục
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Filter and Search Controls */}
       <div style={{

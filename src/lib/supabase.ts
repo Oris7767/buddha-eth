@@ -6,6 +6,8 @@ const STORAGE_KEY_CONFIG = 'classical_gazette_supabase_config';
 const STORAGE_KEY_POSTS = 'classical_gazette_posts';
 const STORAGE_KEY_COMMENTS = 'classical_gazette_comments';
 const STORAGE_KEY_USER = 'classical_gazette_user';
+const STORAGE_KEY_HIDDEN = 'classical_gazette_hidden_posts';
+const STORAGE_KEY_OVERRIDES = 'classical_gazette_archive_overrides';
 
 // Get active configuration (from env or localStorage)
 export function getSupabaseConfig(): { url: string; anonKey: string; isConfigured: boolean } {
@@ -77,28 +79,89 @@ function saveLocalPosts(posts: Post[]): void {
   localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(cleaned));
 }
 
+// ----------------- XOÁ / SỬA BÀI ARCHIVE NGAY TRÊN WEB -----------------
+// Bài cào từ X nằm trong archive-posts.json (file tĩnh). Muốn xoá/sửa mà không đụng
+// code, ta lưu danh sách id đã xoá + các field đã sửa vào localStorage của trình duyệt.
+
+export function getHiddenPostIds(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_HIDDEN);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setHiddenPostIds(ids: string[]): void {
+  localStorage.setItem(STORAGE_KEY_HIDDEN, JSON.stringify(Array.from(new Set(ids))));
+}
+
+export function hidePost(id: string): void {
+  setHiddenPostIds([...getHiddenPostIds(), id]);
+}
+
+export function unhidePost(id: string): void {
+  setHiddenPostIds(getHiddenPostIds().filter((x) => x !== id));
+}
+
+export function restoreAllHiddenPosts(): void {
+  setHiddenPostIds([]);
+}
+
+function getArchiveOverrides(): Record<string, Partial<Post>> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_OVERRIDES);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveArchiveOverride(id: string, patch: Partial<Post>): void {
+  const all = getArchiveOverrides();
+  all[id] = { ...all[id], ...patch };
+  localStorage.setItem(STORAGE_KEY_OVERRIDES, JSON.stringify(all));
+}
+
 // ----------------- ARCHIVE (bài cào từ X, đóng gói tĩnh) -----------------
 let archiveCache: Post[] | null = null;
 
-export async function getArchivePosts(): Promise<Post[]> {
-  if (archiveCache) return archiveCache;
-  try {
-    const res = await fetch(`${import.meta.env.BASE_URL}archive-posts.json`);
-    if (res.ok) {
-      const data = (await res.json()) as Post[];
-      archiveCache = data.filter((p) => p.status === 'published');
-      return archiveCache;
+export async function getArchivePosts(includeHidden = false): Promise<Post[]> {
+  if (!archiveCache) {
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}archive-posts.json`);
+      if (res.ok) {
+        const data = (await res.json()) as Post[];
+        archiveCache = data.filter((p) => p.status === 'published');
+      } else {
+        archiveCache = [];
+      }
+    } catch (err) {
+      console.warn('No archive-posts.json found:', err);
+      archiveCache = [];
     }
-  } catch (err) {
-    console.warn('No archive-posts.json found:', err);
   }
-  return [];
+  if (includeHidden) return archiveCache;
+  const hidden = new Set(getHiddenPostIds());
+  return archiveCache.filter((p) => !hidden.has(p.id));
 }
 
 function mergePosts(archive: Post[], local: Post[]): Post[] {
   const cleanLocal = local.filter((p) => !['post-1', 'post-2', 'post-3'].includes(p.id));
+  const hidden = new Set(getHiddenPostIds());
+  const overrides = getArchiveOverrides();
   const seen = new Set(cleanLocal.map((p) => p.id));
-  return [...cleanLocal, ...archive.filter((p) => !seen.has(p.id))];
+  const patchedArchive = archive
+    .filter((p) => !hidden.has(p.id))
+    .map((p) => (overrides[p.id] ? { ...p, ...overrides[p.id] } : p));
+  return [
+    ...cleanLocal.filter((p) => !hidden.has(p.id)),
+    ...patchedArchive.filter((p) => !seen.has(p.id))
+  ];
+}
+
+export function getArchiveOverridesSnapshot(): Record<string, Partial<Post>> {
+  return getArchiveOverrides();
 }
 
 // ----------------- POSTS API (SUPABASE WITH FALLBACK) -----------------
@@ -204,10 +267,21 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
     saveLocalPosts(posts);
     return posts[index];
   }
+
+  // Bài archive (id tw-...): lưu đè vào localStorage để giữ thay đổi qua các lần tải
+  if (id.startsWith('tw-')) {
+    saveArchiveOverride(id, { ...updates, updated_at: new Date().toISOString() });
+    return { id, ...updates } as Post;
+  }
   return null;
 }
 
 export async function deletePost(id: string): Promise<boolean> {
+  // Bài archive: ẩn vĩnh viễn trên trình duyệt này (không sửa file JSON)
+  if (id.startsWith('tw-')) {
+    hidePost(id);
+  }
+
   const client = getSupabaseClient();
   if (client) {
     try {
