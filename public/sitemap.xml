@@ -7,20 +7,56 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://classical-gazette.netlify.app/bookmarks</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://classical-gazette.netlify.app/post/nghe-thuat-cua-su-tram-tinh-doc-sau</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://classical-gazette.netlify.app/post/kien-truc-typography-co-dien-trang-in-web</loc>
-    <lastmod>2026-10-12</lastmod>
+    <loc>https://classical-gazette.netlify.app/post/chiem-tinh-hoc-noi-mon-tiem-thuc-carl-jung</loc>
+    <lastmod>2026-10-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://classical-gazette.netlify.app/post/ha-tang-toi-thieu-nha-xuat-ban-doc-lap-supabase-netlify</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://classical-gazette.netlify.app/post/all</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://classical-gazette.netlify.app/post/chiem-tinh-noi-mon</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://classical-gazette.netlify.app/post/triet-hoc-tinh-thuc</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://classical-gazette.netlify.app/post/tam-ly-hoc-chieu-sau</loc>
+    <lastmod>2026-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://classical-gazette.netlify.app/post/chu-ky-vu-tru-thoi-cuoc</loc>
+    <lastmod>2026-10-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
