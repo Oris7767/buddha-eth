@@ -1,6 +1,6 @@
-# THE CLASSICAL GAZETTE — HƯỚNG DẪN KẾT NỐI SUPABASE & DEPLOY NETLIFY
+# BUDDHA.ETH GAZETTE — HƯỚNG DẪN KẾT NỐI SUPABASE & DEPLOY NETLIFY
 
-Chào mừng bạn đến với **The Classical Gazette** — Nền tảng xuất bản blog mang phong cách tạp chí cổ điển (Classical Editorial), được xây dựng chuẩn SEO, kết hợp linh hoạt giữa cơ sở dữ liệu Supabase và hạ tầng Netlify.
+Chào mừng bạn đến với **BUDDHA.ETH GAZETTE** — Tạp chí khảo luận triết học cổ điển và chiêm tinh học nội môn của @buddhaa_eth, được xây dựng chuẩn SEO, kết hợp cơ sở dữ liệu Supabase và hạ tầng Netlify.
 
 ---
 

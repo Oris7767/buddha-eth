@@ -18,7 +18,7 @@ const rootDir = join(__dirname, '..');
 const distDir = join(rootDir, 'dist');
 const publicDir = join(rootDir, 'public');
 
-const BASE_URL = 'https://classical-gazette.netlify.app';
+const BASE_URL = process.env.URL || 'https://buddha-eth.netlify.app';
 
 // 1. Read .env if present
 if (!process.env.VITE_SUPABASE_URL && existsSync(join(rootDir, '.env'))) {

@@ -25,6 +25,7 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   bookmarksCount: number;
+  onSignOut: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onThemeChange,
   searchQuery,
   onSearchChange,
-  bookmarksCount
+  bookmarksCount,
+  onSignOut
 }) => {
   const [showSearch, setShowSearch] = useState(false);
 
@@ -322,21 +324,17 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
-            {/* Write / Editor Button */}
-            <button
-              onClick={() => {
-                if (currentUser) {
-                  onNavigate('editor');
-                } else {
-                  onOpenAuth();
-                }
-              }}
-              className="btn-classic-primary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
-            >
-              <PenLine size={15} />
-              <span>Viết Bài Mới</span>
-            </button>
+            {/* Write / Editor Button (Admin only) */}
+            {currentUser && (
+              <button
+                onClick={() => onNavigate('editor')}
+                className="btn-classic-primary"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+              >
+                <PenLine size={15} />
+                <span>Viết Bài Mới</span>
+              </button>
+            )}
 
             {/* User Profile / Login */}
             {currentUser ? (
@@ -356,7 +354,10 @@ export const Header: React.FC<HeaderProps> = ({
                   <span>{currentUser.name}</span>
                 </div>
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => {
+                    signOut();
+                    onSignOut();
+                  }}
                   title="Đăng xuất"
                   style={{ color: 'var(--text-muted)', padding: '4px' }}
                 >

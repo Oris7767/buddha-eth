@@ -278,34 +278,37 @@ export interface AuthUser {
 
 export async function signIn(email: string, password?: string): Promise<{ user: AuthUser | null; error?: string }> {
   const client = getSupabaseClient();
-  if (client && password) {
-    try {
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) return { user: null, error: error.message };
-      if (data.user) {
-        const u: AuthUser = {
-          id: data.user.id,
-          email: data.user.email || email,
-          name: data.user.user_metadata?.full_name || email.split('@')[0],
-          role: 'editor'
-        };
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(u));
-        return { user: u };
-      }
-    } catch (err: any) {
-      return { user: null, error: err.message };
-    }
+  if (!client) {
+    return {
+      user: null,
+      error: 'Cơ sở dữ liệu Supabase chưa được kết nối! Vui lòng cấu hình URL và Anon Key.'
+    };
   }
 
-  // Offline / Demo login mode
-  const demoUser: AuthUser = {
-    id: 'user-editor-1',
-    email: email || 'editor@gazette.press',
-    name: email ? email.split('@')[0] : 'Trần Tổng Biên Tập',
-    role: 'editor'
-  };
-  localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(demoUser));
-  return { user: demoUser };
+  if (!email || !password) {
+    return {
+      user: null,
+      error: 'Vui lòng nhập đầy đủ Email và Mật khẩu của tài khoản quản trị viên.'
+    };
+  }
+
+  try {
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) return { user: null, error: error.message };
+    if (data.user) {
+      const u: AuthUser = {
+        id: data.user.id,
+        email: data.user.email || email,
+        name: data.user.user_metadata?.full_name || email.split('@')[0],
+        role: 'admin'
+      };
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(u));
+      return { user: u };
+    }
+    return { user: null, error: 'Không tìm thấy thông tin tài khoản người dùng.' };
+  } catch (err: any) {
+    return { user: null, error: err.message || 'Lỗi xác thực hệ thống.' };
+  }
 }
 
 export function getCurrentUser(): AuthUser | null {

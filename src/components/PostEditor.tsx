@@ -161,7 +161,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           status,
           author_name: currentUser.name || 'Ban Biên Tập',
           author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-          author_role: 'Chủ bút The Classical Gazette',
+          author_role: 'Chủ bút BUDDHA.ETH GAZETTE',
           read_time: estimatedReadTime,
           views_count: 0,
           seo_title: seoTitle || title,
@@ -525,7 +525,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 fontSize: '0.85rem'
               }}>
                 <div style={{ fontSize: '0.72rem', color: '#202124', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ color: '#202124', fontWeight: 500 }}>classical-gazette.netlify.app</span>
+                  <span style={{ color: '#202124', fontWeight: 500 }}>buddha-eth.netlify.app</span>
                   <span style={{ color: '#70757a' }}>› post › {slug || 'bai-viet'}</span>
                 </div>
                 <div style={{ color: '#1a0dab', fontSize: '1rem', fontWeight: 500, lineHeight: 1.3, marginBottom: '3px' }}>

@@ -49,7 +49,7 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({
   // Dynamic SEO Update
   useEffect(() => {
     const originalTitle = document.title;
-    document.title = `${post.seo_title || post.title} | The Classical Gazette`;
+    document.title = `${post.seo_title || post.title} | BUDDHA.ETH GAZETTE`;
 
     // Update meta description
     let metaDesc = document.querySelector('meta[name="description"]');
@@ -355,7 +355,7 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({
               textAlign: 'center',
               marginTop: '0.65rem'
             }}>
-              Hình ảnh tư liệu chuyên đề của The Classical Gazette
+              Hình ảnh tư liệu chuyên đề của BUDDHA.ETH GAZETTE
             </figcaption>
           </figure>
         )}
@@ -406,7 +406,7 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({
               Về tác giả: {post.author_name}
             </h4>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-              {post.author_role || 'Nhà nghiên cứu văn hóa và khảo cứu tư tưởng độc lập.'} Bài viết được phản biện và xuất bản theo tiêu chuẩn biên tập của The Classical Gazette.
+              {post.author_role || 'Nhà nghiên cứu văn hóa và khảo cứu tư tưởng độc lập.'} Bài viết được xuất bản theo tiêu chuẩn biên tập của BUDDHA.ETH GAZETTE.
             </p>
           </div>
         </div>

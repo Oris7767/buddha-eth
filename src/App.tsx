@@ -106,6 +106,10 @@ export function App() {
   };
 
   const handleNavigate = (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks', slug?: string) => {
+    if ((view === 'editor' || view === 'admin') && !currentUser) {
+      setIsAuthOpen(true);
+      return;
+    }
     setCurrentView(view);
     if (view === 'post' && slug) {
       setSelectedSlug(slug);
@@ -181,6 +185,10 @@ export function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         bookmarksCount={bookmarks.length}
+        onSignOut={() => {
+          setCurrentUser(null);
+          handleNavigate('home');
+        }}
       />
 
       {/* Main Content Area */}
@@ -199,25 +207,53 @@ export function App() {
 
         {/* VIEW 2: POST EDITOR (WORDPRESS-STYLE) */}
         {currentView === 'editor' && (
-          <PostEditor
-            initialPost={editingPost}
-            currentUser={currentUser || { id: 'temp-1', name: 'Ban Biên Tập', email: 'editor@gazette.press', role: 'editor' }}
-            onBack={() => handleNavigate(currentUser ? 'admin' : 'home')}
-            onPostSaved={handlePostSaved}
-          />
+          currentUser ? (
+            <PostEditor
+              initialPost={editingPost}
+              currentUser={currentUser}
+              onBack={() => handleNavigate('admin')}
+              onPostSaved={handlePostSaved}
+            />
+          ) : (
+            <div className="container" style={{ padding: '5rem 1.5rem', textAlign: 'center' }}>
+              <h2 style={{ fontFamily: 'var(--font-serif-display)', fontSize: '2rem', marginBottom: '1rem' }}>
+                Yêu Cầu Đăng Nhập Quản Trị
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                Khu vực soạn thảo bài viết chỉ dành riêng cho tác giả @buddhaa_eth.
+              </p>
+              <button onClick={() => setIsAuthOpen(true)} className="btn-classic-primary">
+                Đăng Nhập Quản Trị Viên
+              </button>
+            </div>
+          )
         )}
 
         {/* VIEW 3: ADMIN DASHBOARD */}
         {currentView === 'admin' && (
-          <AdminDashboard
-            posts={posts}
-            onWriteNew={handleWriteNew}
-            onEditPost={handleEditPost}
-            onViewPost={handleReadPost}
-            onPostDeleted={handlePostDeleted}
-            onOpenSupabaseModal={() => setIsSupabaseOpen(true)}
-            isSupabaseConnected={isSupabaseConnected}
-          />
+          currentUser ? (
+            <AdminDashboard
+              posts={posts}
+              onWriteNew={handleWriteNew}
+              onEditPost={handleEditPost}
+              onViewPost={handleReadPost}
+              onPostDeleted={handlePostDeleted}
+              onOpenSupabaseModal={() => setIsSupabaseOpen(true)}
+              isSupabaseConnected={isSupabaseConnected}
+            />
+          ) : (
+            <div className="container" style={{ padding: '5rem 1.5rem', textAlign: 'center' }}>
+              <h2 style={{ fontFamily: 'var(--font-serif-display)', fontSize: '2rem', marginBottom: '1rem' }}>
+                Yêu Cầu Đăng Nhập Quản Trị
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                Bảng điều khiển tòa soạn chỉ dành riêng cho tác giả @buddhaa_eth.
+              </p>
+              <button onClick={() => setIsAuthOpen(true)} className="btn-classic-primary">
+                Đăng Nhập Quản Trị Viên
+              </button>
+            </div>
+          )
         )}
 
         {/* VIEW 4: BOOKMARKS VIEW */}
@@ -383,37 +419,86 @@ export function App() {
                   </p>
                 </div>
 
-                {/* Direct Action for Writer */}
-                <div style={{
-                  border: '2px solid var(--text-primary)',
-                  padding: '1.5rem',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-card)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>
-                    <PenLine size={18} />
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase' }}>Dành Cho Tác Giả</span>
+                {/* Author Quick Box (if logged in) OR Official Channels (if public reader) */}
+                {currentUser ? (
+                  <div style={{
+                    border: '2px solid var(--text-primary)',
+                    padding: '1.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--bg-card)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>
+                      <PenLine size={18} />
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase' }}>Khu Vực Quản Trị</span>
+                    </div>
+                    <h4 style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.2rem', marginBottom: '0.35rem' }}>
+                      Xin chào, {currentUser.name}
+                    </h4>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                      Bạn đang đăng nhập với quyền Quản trị viên.
+                    </p>
+                    <button
+                      onClick={() => handleNavigate('editor')}
+                      className="btn-classic-primary"
+                      style={{ width: '100%', padding: '0.6rem', marginBottom: '0.5rem' }}
+                    >
+                      Soạn Bài Viết Mới
+                    </button>
+                    <button
+                      onClick={() => handleNavigate('admin')}
+                      className="btn-classic-secondary"
+                      style={{ width: '100%', padding: '0.5rem' }}
+                    >
+                      Quản Lý Bài Viết
+                    </button>
                   </div>
-                  <h4 style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-                    Viết & Đăng Bài Trực Tiếp
-                  </h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
-                    Soạn thảo với trình soạn thảo Gutenberg Markdown, xem trước giao diện thời gian thực và đo lường chuẩn SEO.
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (currentUser) {
-                        handleNavigate('editor');
-                      } else {
-                        setIsAuthOpen(true);
-                      }
-                    }}
-                    className="btn-classic-primary"
-                    style={{ width: '100%', padding: '0.6rem' }}
-                  >
-                    Bắt Đầu Soạn Thảo
-                  </button>
-                </div>
+                ) : (
+                  <div style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-subtle)',
+                    padding: '1.5rem',
+                    borderRadius: 'var(--radius-sm)'
+                  }}>
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                      Kênh Chính Thức
+                    </span>
+                    <h4 style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', margin: '0.35rem 0 0.75rem 0' }}>
+                      Theo Dõi @buddhaa_eth
+                    </h4>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.2rem' }}>
+                      Khảo luận chiêm tinh, chu kỳ vận hành và triết học cổ điển được cập nhật trực tiếp tại:
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                      <a
+                        href="https://x.com/buddhaa_eth"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-classic-secondary"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.55rem', fontSize: '0.85rem' }}
+                      >
+                        <span>𝕏: <strong>@buddhaa_eth</strong></span>
+                      </a>
+                      <a
+                        href="https://t.me/Buddha_eth"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-classic-secondary"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.55rem', fontSize: '0.85rem' }}
+                      >
+                        <span>Telegram: <strong>@Buddha_eth</strong></span>
+                      </a>
+                      <a
+                        href="https://www.threads.com/@buddhaa.eth"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-classic-secondary"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.55rem', fontSize: '0.85rem' }}
+                      >
+                        <span>Threads: <strong>@buddhaa.eth</strong></span>
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Popular Tags Cloud */}
                 <div style={{

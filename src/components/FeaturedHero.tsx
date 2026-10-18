@@ -166,7 +166,7 @@ export const FeaturedHero: React.FC<FeaturedHeroProps> = ({
             marginTop: '0.5rem',
             textAlign: 'right'
           }}>
-            Hình minh họa chuyên đề • The Classical Gazette Archive
+            Hình minh họa chuyên đề • BUDDHA.ETH GAZETTE Archive
           </p>
         </div>
       </div>

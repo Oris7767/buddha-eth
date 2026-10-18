@@ -18,7 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const distDir = join(rootDir, 'dist');
 
-const BASE_URL = 'https://classical-gazette.netlify.app';
+const BASE_URL = process.env.URL || 'https://buddha-eth.netlify.app';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=1200&q=80';
 
 // Read .env if present
