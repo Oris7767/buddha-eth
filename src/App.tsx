@@ -549,6 +549,8 @@ export function App() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+        isSupabaseConnected={isSupabaseConnected}
+        onOpenSupabaseModal={() => setIsSupabaseOpen(true)}
         onLoginSuccess={(user) => {
           setCurrentUser(user);
           handleNavigate('editor');

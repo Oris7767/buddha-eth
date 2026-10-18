@@ -6,12 +6,16 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: AuthUser) => void;
+  isSupabaseConnected?: boolean;
+  onOpenSupabaseModal?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
-  onLoginSuccess
+  onLoginSuccess,
+  isSupabaseConnected = false,
+  onOpenSupabaseModal
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -90,6 +94,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             Xác thực tài khoản Supabase Auth để viết và quản lý bài viết
           </p>
         </div>
+
+        {!isSupabaseConnected && (
+          <div style={{
+            padding: '0.85rem',
+            backgroundColor: 'rgba(234, 179, 8, 0.12)',
+            border: '1px solid #CA8A04',
+            borderRadius: '4px',
+            fontSize: '0.82rem',
+            marginBottom: '1.25rem',
+            lineHeight: 1.5,
+            color: 'var(--text-primary)'
+          }}>
+            <div style={{ fontWeight: 700, color: '#A16207', marginBottom: '0.35rem' }}>
+              ⚠️ Cơ sở dữ liệu Supabase chưa được kết nối
+            </div>
+            <p style={{ margin: '0 0 0.65rem 0', color: 'var(--text-secondary)' }}>
+              Để xác thực và lưu bài viết, bạn cần cung cấp <strong>Project URL</strong> và <strong>Anon Key</strong> từ Supabase Dashboard.
+            </p>
+            {onOpenSupabaseModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSupabaseModal();
+                }}
+                className="btn-classic-primary"
+                style={{ width: '100%', padding: '0.45rem', fontSize: '0.8rem' }}
+              >
+                Nhập Supabase URL & Anon Key
+              </button>
+            )}
+          </div>
+        )}
 
         {error && (
           <div style={{
