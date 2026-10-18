@@ -161,6 +161,19 @@ def tweet_text(t: dict) -> str:
     return txt.strip()
 
 
+def is_self_retweet(chain: list[dict]) -> bool:
+    head = tweet_text(chain[0])
+    return head.startswith("RT @")
+
+
+def is_conversation(chain: list[dict]) -> bool:
+    """Chuỗi bắt đầu bằng reply cho người khác → là hội thoại, không phải bài viết."""
+    root = chain[0]
+    if root.get("is_reply"):
+        return True
+    return tweet_text(root).lstrip().startswith("@")
+
+
 def make_post(chain: list[dict], used_slugs: set[str]) -> dict | None:
     parts = [tweet_text(t) for t in chain]
     parts = [p for p in parts if p]
@@ -272,6 +285,7 @@ def main() -> None:
     ap.add_argument("json_path")
     ap.add_argument("--include-trading", action="store_true", help="gồm cả bài trading thuần")
     ap.add_argument("--include-short-other", action="store_true")
+    ap.add_argument("--include-replies", action="store_true", help="gồm cả reply/hội thoại")
     args = ap.parse_args()
 
     raw = json.load(open(args.json_path))
@@ -280,8 +294,15 @@ def main() -> None:
     print(f"{len(rows)} tweet → {len(chains)} chuỗi/bài")
 
     used: set[str] = set()
+    seen_text: set[str] = set()
     posts, skipped = [], Counter()
     for ch in chains:
+        if is_self_retweet(ch):
+            skipped["self-retweet (bỏ)"] += 1
+            continue
+        if is_conversation(ch) and not args.include_replies:
+            skipped["reply/hội thoại (bỏ)"] += 1
+            continue
         p = make_post(ch, used)
         if not p:
             skipped["quá ngắn"] += 1
@@ -296,6 +317,12 @@ def main() -> None:
         if k == "khac" and len(p["content"]) < 400 and not args.include_short_other:
             skipped["khác + ngắn (bỏ)"] += 1
             continue
+        # trùng nội dung (ví dụ đăng lại bài cũ) → giữ bản đầu
+        key = " ".join(p["content"].split())[:300].lower()
+        if key in seen_text:
+            skipped["trùng nội dung (bỏ)"] += 1
+            continue
+        seen_text.add(key)
         posts.append(p)
 
     posts.sort(key=lambda x: x["created_at"], reverse=True)

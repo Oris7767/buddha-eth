@@ -1,14 +1,14 @@
 # IMPORT REPORT — @buddhaa_eth
 
 - Nguồn: `full_buddhaa_eth_20261018.json` (5401 tweet)
-- Chuỗi/bài sau khi gộp thread: **523**
-- published: **369** · draft: 154
-- Bỏ: {'quá ngắn': 424, 'trading thuần (bỏ)': 1013, 'promo/airdrop (bỏ)': 133, 'khác + ngắn (bỏ)': 129}
+- Chuỗi/bài sau khi gộp thread: **487**
+- published: **348** · draft: 139
+- Bỏ: {'quá ngắn': 96, 'trading thuần (bỏ)': 976, 'promo/airdrop (bỏ)': 130, 'reply/hội thoại (bỏ)': 433, 'khác + ngắn (bỏ)': 86, 'self-retweet (bỏ)': 12, 'trùng nội dung (bỏ)': 2}
 
 ## Theo chuyên mục
-- Triết Học & Tỉnh Thức: 292
-- Chu Kỳ Vũ Trụ & Thời Cuộc: 153
-- Chiêm Tinh Nội Môn: 78
+- Triết Học & Tỉnh Thức: 272
+- Chu Kỳ Vũ Trụ & Thời Cuộc: 143
+- Chiêm Tinh Vệ Đà: 72
 
 ## Bài được tương tác nhiều nhất
 
