@@ -77,7 +77,7 @@ function getFallbackPosts() {
     if (existsSync(archivePath)) {
       const all = JSON.parse(readFileSync(archivePath, 'utf8'));
       return all
-        .filter(p => p.status === 'published' && p.slug && !['all', 'chiem-tinh-noi-mon', 'triet-hoc-tinh-thuc', 'tam-ly-hoc-chieu-sau', 'chu-ky-vu-tru-thoi-cuoc'].includes(p.slug))
+        .filter(p => p.status === 'published' && p.slug && !['all', 'chiem-tinh-ve-da', 'chiem-tinh-noi-mon', 'triet-hoc-tinh-thuc', 'tam-ly-hoc-chieu-sau', 'chu-ky-vu-tru-thoi-cuoc'].includes(p.slug))
         .map(p => ({
           slug: p.slug,
           created_at: p.created_at || TODAY,

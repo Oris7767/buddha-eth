@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
           fontSize: '1.05rem',
           marginTop: '0.3rem'
         }}>
-          Khảo luận Triết học Cổ điển, Chiêm tinh Nội môn & Bản đồ Tâm thức
+          Khảo luận Triết học Cổ điển, Chiêm tinh Vệ Đà & Bản đồ Tâm thức
         </p>
 
         {/* Double Border Masthead Rule */}

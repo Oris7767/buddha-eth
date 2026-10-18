@@ -88,7 +88,7 @@ def classify(text: str) -> str:
 
 
 CATEGORY = {
-    "chiem-tinh": "Chiêm Tinh Nội Môn",
+    "chiem-tinh": "Chiêm Tinh Vệ Đà",
     "triet-hoc": "Triết Học & Tỉnh Thức",
     "chu-ky": "Chu Kỳ Vũ Trụ & Thời Cuộc",
     "thi-truong": "Thị Trường & Chu Kỳ",

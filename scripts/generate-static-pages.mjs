@@ -74,7 +74,7 @@ function injectMetaAndContent(templateHtml, post) {
   let html = templateHtml;
   const canonicalUrl = `${BASE_URL}/post/${post.slug}`;
   const pageTitle = `${post.seo_title || post.title} | BUDDHA.ETH GAZETTE`;
-  const pageDescription = post.seo_description || post.excerpt || 'Khảo luận Triết học Cổ điển, Chiêm tinh Nội môn & Bản đồ Tâm thức';
+  const pageDescription = post.seo_description || post.excerpt || 'Khảo luận Triết học Cổ điển, Chiêm tinh Vệ Đà & Bản đồ Tâm thức';
   const pageImage = post.cover_image || DEFAULT_IMAGE;
 
   // 1. Replace <title>

@@ -36,7 +36,7 @@ export const Footer: React.FC<FooterProps> = ({
               BUDDHA.ETH GAZETTE
             </h3>
             <p style={{ lineHeight: 1.6, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-              Không gian lưu trữ và xuất bản các khảo luận về Triết học Cổ điển, Chiêm tinh học Nội môn và Bản đồ Tâm thức của @buddhaa_eth.
+              Không gian lưu trữ và xuất bản các khảo luận về Triết học Cổ điển, Chiêm tinh học Vệ Đà và Bản đồ Tâm thức của @buddhaa_eth.
             </p>
             <div style={{ marginTop: '1rem', fontStyle: 'italic', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               "Như trên trời, dưới đất cũng vậy (As above, so below) — Vạn vật tương liên trong vũ trụ đồng điệu."
