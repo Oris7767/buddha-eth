@@ -136,8 +136,10 @@ function buildSitemap(posts, newestPostDate) {
 
   // Blog posts
   for (const post of posts) {
-    if (!post.slug) continue;
-    const loc = `${BASE_URL}/post/${post.slug}`;
+    const rawSlug = post.slug || '';
+    const cleanSlug = String(rawSlug).trim().toLowerCase();
+    if (!cleanSlug || cleanSlug.includes(' ')) continue;
+    const loc = `${BASE_URL}/post/${cleanSlug}`;
     if (seen.has(loc)) continue;
     seen.add(loc);
 

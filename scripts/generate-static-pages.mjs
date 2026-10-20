@@ -302,28 +302,46 @@ async function main() {
 
   const template = readFileSync(templatePath, 'utf8');
   const posts = await fetchPosts();
-  const expectedFiles = new Set(posts.filter(p => p.slug).map(p => `post-${p.slug}.html`));
+  const expectedFiles = new Set();
 
   let generated = 0;
   for (const post of posts) {
-    if (!post.slug) continue;
-    const flatFileName = `post-${post.slug}.html`;
+    const rawSlug = post.slug || post.title || '';
+    const cleanSlug = String(rawSlug)
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    if (!cleanSlug) continue;
+    post.slug = cleanSlug;
+
+    const flatFileName = `post-${cleanSlug}.html`;
+    expectedFiles.add(flatFileName);
     const outputPath = join(distDir, flatFileName);
 
     const prerenderedHtml = injectMetaAndContent(template, post);
     writeFileSync(outputPath, prerenderedHtml, 'utf8');
-    console.log(`  ✅ Generated /${flatFileName} for /post/${post.slug}`);
+    console.log(`  ✅ Generated /${flatFileName} for /post/${cleanSlug}`);
     generated++;
   }
 
-  // Dọn trang tĩnh mồ côi: bài đã xoá / unpublish nhưng file cũ còn trong dist
+  // Dọn trang tĩnh mồ côi hoặc file có dấu cách / sai định dạng
   let pruned = 0;
   for (const file of readdirSync(distDir)) {
     if (!file.startsWith('post-') || !file.endsWith('.html')) continue;
-    if (expectedFiles.has(file)) continue;
-    unlinkSync(join(distDir, file));
-    pruned++;
-    console.log(`  🗑  Removed stale ${file}`);
+    if (file.includes(' ') || !expectedFiles.has(file)) {
+      try {
+        unlinkSync(join(distDir, file));
+        pruned++;
+        console.log(`  🗑  Removed invalid/stale ${file}`);
+      } catch (err) {
+        console.warn(`  ⚠️ Failed to delete ${file}:`, err.message);
+      }
+    }
   }
 
   // Generate /gioi-thieu (about the author) prerender

@@ -36,9 +36,16 @@ const lines = [
 ];
 
 for (const file of postHtmlFiles) {
-  const slug = file.replace(/^post-/, '').replace(/\.html$/, '');
+  const cleanFile = file.trim();
+  // Bỏ qua file có dấu cách để tránh lỗi phân tích cú pháp redirect của Netlify
+  if (cleanFile.includes(' ')) {
+    console.warn(`  ⚠️ Skipping file with space in name: "${cleanFile}"`);
+    continue;
+  }
+  const slug = cleanFile.replace(/^post-/, '').replace(/\.html$/, '').trim();
+  if (!slug || slug.includes(' ')) continue;
   const route = `/post/${slug}`;
-  lines.push(`${route.padEnd(45)} /${file}    200`);
+  lines.push(`${route.padEnd(45)} /${cleanFile}    200`);
 }
 
 lines.push('');

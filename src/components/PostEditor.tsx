@@ -222,12 +222,22 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     setIsSaving(true);
     const tagsArray = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
 
+    // Chuẩn hóa và làm sạch slug (loại bỏ dấu cách thừa, ký tự lạ để tránh lỗi rewrite Netlify)
+    const cleanSlug = (slug || title)
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || ('bai-viet-' + Date.now());
+
     try {
       let savedPost: Post;
       if (initialPost?.id) {
         const res = await updatePost(initialPost.id, {
           title,
-          slug: slug || 'bai-viet-' + Date.now(),
+          slug: cleanSlug,
           excerpt: excerpt || content.substring(0, 150) + '...',
           content,
           cover_image: coverImage,
@@ -239,11 +249,11 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           seo_description: seoDescription || excerpt,
           seo_keywords: seoKeywords
         });
-        savedPost = res || { ...initialPost, title, content };
+        savedPost = res || { ...initialPost, title, content, slug: cleanSlug };
       } else {
         savedPost = await createPost({
           title,
-          slug: slug || 'bai-viet-' + Date.now(),
+          slug: cleanSlug,
           excerpt: excerpt || content.substring(0, 150) + '...',
           content,
           cover_image: coverImage,
