@@ -306,24 +306,33 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
 }
 
 export async function deletePost(id: string): Promise<boolean> {
-  // Bài archive: ẩn vĩnh viễn trên trình duyệt này (không sửa file JSON)
-  if (id.startsWith('tw-')) {
-    hidePost(id);
-  }
-
   const client = getSupabaseClient();
+
+  // Có Supabase → xoá thẳng trong database: mọi người, mọi thiết bị đều mất bài.
   if (client) {
     try {
       const { error } = await client.from('posts').delete().eq('id', id);
-      if (!error) return true;
+      if (error) {
+        console.warn('Supabase delete failed:', error.message);
+        return false;
+      }
+      // Dọn luôn bản ẩn cục bộ (nếu trước đây đã bấm xoá khi chưa nối DB)
+      unhidePost(id);
+      const localPosts = getLocalPosts().filter((p) => p.id !== id);
+      saveLocalPosts(localPosts);
+      return true;
     } catch (err) {
-      console.warn('Supabase delete failed, removing locally:', err);
+      console.warn('Supabase delete threw:', err);
+      return false;
     }
   }
 
+  // Không có Supabase: chỉ còn cách ẩn trên trình duyệt này (và ghi vào danh sách chờ áp dụng)
+  if (id.startsWith('tw-') || archiveCache === null) {
+    hidePost(id);
+  }
   const posts = getLocalPosts();
-  const filtered = posts.filter((p) => p.id !== id);
-  saveLocalPosts(filtered);
+  saveLocalPosts(posts.filter((p) => p.id !== id));
   return true;
 }
 
