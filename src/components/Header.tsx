@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   PenLine, 
-  Database, 
   Sun, 
   Moon, 
   BookOpen, 
@@ -18,8 +17,8 @@ interface HeaderProps {
   onNavigate: (view: 'home' | 'post' | 'editor' | 'admin' | 'bookmarks' | 'about', slug?: string) => void;
   currentUser: AuthUser | null;
   onOpenAuth: () => void;
-  onOpenSupabaseModal: () => void;
-  isSupabaseConnected: boolean;
+  onOpenSupabaseModal?: () => void;
+  isSupabaseConnected?: boolean;
   theme: 'light' | 'sepia' | 'dark';
   onThemeChange: (theme: 'light' | 'sepia' | 'dark') => void;
   searchQuery: string;
@@ -33,8 +32,6 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   currentUser,
   onOpenAuth,
-  onOpenSupabaseModal,
-  isSupabaseConnected,
   theme,
   onThemeChange,
   searchQuery,
@@ -107,29 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Threads: <strong>@buddhaa.eth</strong></span>
               </a>
             </div>
-
-            {/* Database settings (Only visible when admin is logged in) */}
-            {currentUser && (
-              <button
-                onClick={onOpenSupabaseModal}
-                title="Cấu hình kết nối Supabase"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  fontSize: '0.72rem',
-                  padding: '0.18rem 0.5rem',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-subtle)',
-                  backgroundColor: isSupabaseConnected ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                  color: isSupabaseConnected ? '#15803D' : '#A16207',
-                  cursor: 'pointer'
-                }}
-              >
-                <Database size={11} />
-                <span>{isSupabaseConnected ? 'Supabase' : 'Offline'}</span>
-              </button>
-            )}
 
             {/* Reading Mode Theme Switcher */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', backgroundColor: 'var(--bg-tertiary)', padding: '2px', borderRadius: '4px' }}>

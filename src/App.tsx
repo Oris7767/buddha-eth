@@ -185,8 +185,6 @@ export function App() {
         onNavigate={handleNavigate}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
-        onOpenSupabaseModal={() => setIsSupabaseOpen(true)}
-        isSupabaseConnected={isSupabaseConnected}
         theme={theme}
         onThemeChange={handleThemeChange}
         searchQuery={searchQuery}
@@ -543,7 +541,6 @@ export function App() {
       {/* Site Footer */}
       <Footer
         onSelectCategory={setSelectedCategory}
-        onOpenSupabaseModal={() => setIsSupabaseOpen(true)}
       />
 
       {/* Supabase Configuration Modal */}

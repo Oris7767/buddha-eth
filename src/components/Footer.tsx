@@ -4,7 +4,6 @@ import { INITIAL_CATEGORIES } from '../data/samplePosts';
 
 interface FooterProps {
   onSelectCategory: (cat: string) => void;
-  onOpenSupabaseModal?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
