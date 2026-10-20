@@ -2,16 +2,6 @@
   command = "npm run build"
   publish = "dist"
 
-[[redirects]]
-  from = "/post/:slug"
-  to = "/post-:slug.html"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 [[headers]]
   for = "/*"
   [headers.values]
@@ -21,7 +11,14 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# Cache static assets aggressively (hashed filenames = immutable)
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# HTML entry point should not be cached long (SPA entry point)
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
