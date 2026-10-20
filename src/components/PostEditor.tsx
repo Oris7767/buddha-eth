@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Post } from '../types/blog';
 import { 
   Save, 
@@ -9,6 +9,9 @@ import {
   CheckCircle, 
   Sparkles, 
   Image as ImageIcon, 
+  Upload,
+  Loader2,
+  X,
   Globe, 
   Tag as TagIcon, 
   Folder, 
@@ -25,7 +28,7 @@ import {
 import confetti from 'canvas-confetti';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { createPost, updatePost, AuthUser } from '../lib/supabase';
+import { createPost, updatePost, uploadImageToSupabase, AuthUser } from '../lib/supabase';
 import { INITIAL_CATEGORIES } from '../data/samplePosts';
 
 interface PostEditorProps {
@@ -71,6 +74,14 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Image Upload state
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingInline, setIsUploadingInline] = useState(false);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const inlineFileInputRef = useRef<HTMLInputElement>(null);
+
   // Auto-generate slug from title unless manually edited
   useEffect(() => {
     if (!isSlugManual && title) {
@@ -104,6 +115,86 @@ export const PostEditor: React.FC<PostEditorProps> = ({
       textarea.focus();
       textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selectedText.length || 7));
     }, 10);
+  };
+
+  const notify = (msg: string) => {
+    setUploadNotice(msg);
+    setTimeout(() => setUploadNotice(null), 4000);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    notify('Đang tải ảnh bìa lên Supabase Storage...');
+    const res = await uploadImageToSupabase(file, 'covers');
+    setIsUploadingCover(false);
+    if (res.url) {
+      setCoverImage(res.url);
+      notify('✓ Đã tải ảnh bìa lên Supabase thành công!');
+    } else {
+      alert(res.error || 'Tải ảnh bìa thất bại');
+    }
+    if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+  };
+
+  const insertImageMarkdown = (url: string, titleText: string = 'Hình ảnh') => {
+    const imageMarkdown = `\n\n![${titleText}](${url})\n*Ảnh minh họa: ${titleText}*\n\n`;
+    const textarea = document.getElementById('post-content-textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const before = content.substring(0, start);
+      const after = content.substring(end);
+      setContent(before + imageMarkdown + after);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + imageMarkdown.length, start + imageMarkdown.length);
+      }, 10);
+    } else {
+      setContent((prev) => prev + imageMarkdown);
+    }
+  };
+
+  const handleInlineUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingInline(true);
+    notify('Đang tải ảnh bài viết lên Supabase Storage...');
+    const res = await uploadImageToSupabase(file, 'articles');
+    setIsUploadingInline(false);
+    if (res.url) {
+      const rawName = file.name.substring(0, file.name.lastIndexOf('.') || file.name.length);
+      insertImageMarkdown(res.url, rawName);
+      notify('✓ Đã tải và chèn ảnh vào bài viết thành công!');
+    } else {
+      alert(res.error || 'Tải ảnh thất bại');
+    }
+    if (inlineFileInputRef.current) inlineFileInputRef.current.value = '';
+  };
+
+  const handleContentPaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          setIsUploadingInline(true);
+          notify('Đang tải ảnh từ bộ nhớ tạm lên Supabase Storage...');
+          const res = await uploadImageToSupabase(file, 'articles');
+          setIsUploadingInline(false);
+          if (res.url) {
+            insertImageMarkdown(res.url, 'Ảnh đính kèm');
+            notify('✓ Đã dán ảnh lên Supabase thành công!');
+          } else {
+            alert(res.error || 'Lỗi tải ảnh từ clipboard');
+          }
+          break;
+        }
+      }
+    }
   };
 
   // Word count & read time calculation
@@ -391,6 +482,33 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             </div>
 
             {/* Formatting Toolbar (WordPress-style) */}
+            <input
+              type="file"
+              ref={inlineFileInputRef}
+              accept="image/*"
+              onChange={handleInlineUpload}
+              style={{ display: 'none' }}
+            />
+
+            {uploadNotice && (
+              <div style={{
+                padding: '0.45rem 0.85rem',
+                backgroundColor: 'rgba(154, 52, 18, 0.08)',
+                color: 'var(--accent-primary)',
+                border: '1px solid var(--accent-light)',
+                borderBottom: 'none',
+                borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <Sparkles size={14} />
+                <span>{uploadNotice}</span>
+              </div>
+            )}
+
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -400,7 +518,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               backgroundColor: 'var(--bg-secondary)',
               border: '1px solid var(--border-subtle)',
               borderBottom: 'none',
-              borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
+              borderRadius: uploadNotice ? '0' : 'var(--radius-sm) var(--radius-sm) 0 0'
             }}>
               <button onClick={() => insertFormatting('**', '**')} title="In đậm (Bold)" style={{ padding: '6px', borderRadius: '3px' }}>
                 <Bold size={15} />
@@ -429,6 +547,40 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 <Minus size={15} />
               </button>
               <span style={{ color: 'var(--border-subtle)' }}>|</span>
+
+              {/* Upload & Insert Image Button */}
+              <button
+                type="button"
+                onClick={() => inlineFileInputRef.current?.click()}
+                disabled={isUploadingInline}
+                title="Tải ảnh từ máy lên Supabase & chèn vào vị trí con trỏ (Hỗ trợ kéo thả / Ctrl+V dán ảnh)"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '4px 9px',
+                  borderRadius: '3px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--accent-primary)',
+                  cursor: isUploadingInline ? 'wait' : 'pointer'
+                }}
+              >
+                {isUploadingInline ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Đang tải lên Supabase...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={14} />
+                    <span>Tải & Chèn Ảnh</span>
+                  </>
+                )}
+              </button>
+
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                 {wordCount} từ • ~{estimatedReadTime} phút đọc
               </span>
@@ -448,9 +600,10 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 <textarea
                   id="post-content-textarea"
                   rows={20}
-                  placeholder="Bắt đầu soạn thảo bài viết bằng Markdown hoặc gõ văn bản tự nhiên...&#10;&#10;## Đặt câu hỏi cốt lõi&#10;Trình bày các luận điểm với sự mạch lạc và trầm tĩnh."
+                  placeholder="Bắt đầu soạn thảo bài viết bằng Markdown hoặc gõ văn bản tự nhiên...&#10;(Mẹo: Bạn có thể dán ảnh trực tiếp Ctrl+V từ clipboard hoặc bấm nút 'Tải & Chèn Ảnh' ở trên để tải lên Supabase)&#10;&#10;## Đặt câu hỏi cốt lõi&#10;Trình bày các luận điểm với sự mạch lạc và trầm tĩnh."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  onPaste={handleContentPaste}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -631,20 +784,84 @@ export const PostEditor: React.FC<PostEditorProps> = ({
 
               {/* Cover Image Selector */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Ảnh bìa bản in (Cover Image URL)
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ImageIcon size={14} />
+                    <span>Ảnh bìa bản in (Cover Image)</span>
+                  </label>
+                  {coverImage && (
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage('')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '0.72rem',
+                        color: '#B91C1C',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontWeight: 600
+                      }}
+                    >
+                      Gỡ ảnh
+                    </button>
+                  )}
+                </div>
+
+                {/* Hidden Cover File Input */}
                 <input
-                  type="url"
-                  placeholder="https://..."
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  style={{ width: '100%', fontSize: '0.85rem', marginBottom: '0.5rem' }}
+                  type="file"
+                  ref={coverFileInputRef}
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  style={{ display: 'none' }}
                 />
 
+                {/* Upload to Supabase Button */}
+                <button
+                  type="button"
+                  onClick={() => coverFileInputRef.current?.click()}
+                  disabled={isUploadingCover}
+                  className="btn-classic-primary"
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem',
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                    marginBottom: '0.75rem',
+                    cursor: isUploadingCover ? 'wait' : 'pointer'
+                  }}
+                >
+                  {isUploadingCover ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>Đang tải lên Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={15} />
+                      <span>Tải ảnh từ máy lên Supabase</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Direct URL input fallback */}
+                <div style={{ marginBottom: '0.65rem' }}>
+                  <input
+                    type="url"
+                    placeholder="Hoặc dán URL: https://..."
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    style={{ width: '100%', fontSize: '0.8rem' }}
+                  />
+                </div>
+
                 {/* Quick Presets */}
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  Ảnh mẫu phong cách cổ điển:
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                  Hoặc chọn ảnh mẫu phong cách cổ điển:
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
                   {COVER_PRESETS.map((preset) => (
@@ -667,8 +884,20 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 </div>
 
                 {coverImage && (
-                  <div style={{ marginTop: '0.75rem', border: '1px solid var(--border-subtle)', padding: '2px' }}>
-                    <img src={coverImage} alt="Cover preview" style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }} />
+                  <div style={{ marginTop: '0.75rem', border: '1px solid var(--border-subtle)', padding: '2px', position: 'relative' }}>
+                    <img src={coverImage} alt="Cover preview" style={{ width: '100%', height: '115px', objectFit: 'cover', display: 'block' }} />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '4px',
+                      right: '4px',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: '#FFF',
+                      fontSize: '0.65rem',
+                      padding: '2px 6px',
+                      borderRadius: '2px'
+                    }}>
+                      Xem trước
+                    </div>
                   </div>
                 )}
               </div>

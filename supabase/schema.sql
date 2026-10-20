@@ -146,3 +146,47 @@ BEGIN
     WHERE id = target_post_id;
 END;
 $$;
+
+-- ==============================================================================
+-- 7. SUPABASE STORAGE BUCKET: blog-images
+-- Dùng để lưu trữ ảnh bìa (covers) và ảnh nội dung bài viết (articles)
+-- ==============================================================================
+
+-- 1. Tạo Storage Bucket 'blog-images' (chế độ Public để bài viết tải ảnh nhanh qua CDN)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+    'blog-images',
+    'blog-images',
+    true,
+    10485760, -- Tối đa 10MB mỗi ảnh
+    ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
+)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- 2. Chính sách xem ảnh công khai (Mọi độc giả đều xem được ảnh trên web)
+DROP POLICY IF EXISTS "Public read blog images" ON storage.objects;
+CREATE POLICY "Public read blog images"
+    ON storage.objects FOR SELECT
+    TO public
+    USING (bucket_id = 'blog-images');
+
+-- 3. Chính sách tải ảnh lên: Cho phép tải ảnh lên bucket blog-images
+DROP POLICY IF EXISTS "Allow upload blog images" ON storage.objects;
+CREATE POLICY "Allow upload blog images"
+    ON storage.objects FOR INSERT
+    TO public
+    WITH CHECK (bucket_id = 'blog-images');
+
+-- 4. Chính sách cập nhật ảnh
+DROP POLICY IF EXISTS "Allow update blog images" ON storage.objects;
+CREATE POLICY "Allow update blog images"
+    ON storage.objects FOR UPDATE
+    TO public
+    USING (bucket_id = 'blog-images');
+
+-- 5. Chính sách xóa ảnh
+DROP POLICY IF EXISTS "Allow delete blog images" ON storage.objects;
+CREATE POLICY "Allow delete blog images"
+    ON storage.objects FOR DELETE
+    TO authenticated
+    USING (bucket_id = 'blog-images');

@@ -410,3 +410,78 @@ export function signOut(): void {
   }
   localStorage.removeItem(STORAGE_KEY_USER);
 }
+
+// ----------------- STORAGE API (SUPABASE STORAGE) -----------------
+export interface UploadResult {
+  url: string | null;
+  error?: string;
+}
+
+export async function uploadImageToSupabase(
+  file: File,
+  folder: 'covers' | 'articles' = 'covers'
+): Promise<UploadResult> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      url: null,
+      error: 'Chưa kết nối Supabase! Vui lòng bấm vào "Cấu hình Supabase" ở góc trên để kết nối trước khi tải ảnh.'
+    };
+  }
+
+  // Kiểm tra định dạng tệp
+  if (!file.type.startsWith('image/')) {
+    return {
+      url: null,
+      error: 'Tệp tải lên không hợp lệ. Vui lòng chọn tệp hình ảnh (JPEG, PNG, WEBP, GIF, SVG).'
+    };
+  }
+
+  // Giới hạn dung lượng tối đa 10MB
+  const MAX_SIZE = 10 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    return {
+      url: null,
+      error: 'Dung lượng ảnh vượt quá 10MB. Vui lòng chọn ảnh nhẹ hơn.'
+    };
+  }
+
+  try {
+    const bucketName = 'blog-images';
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const cleanName = file.name
+      .substring(0, file.name.lastIndexOf('.') || file.name.length)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]/g, '_')
+      .substring(0, 40);
+
+    const filePath = `${folder}/${Date.now()}_${cleanName}.${ext}`;
+
+    const { data, error } = await client.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '31536000',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      let errorMsg = error.message;
+      if (errorMsg.toLowerCase().includes('bucket not found') || errorMsg.includes('The resource was not found')) {
+        errorMsg = `Bucket '${bucketName}' chưa tồn tại trong Supabase Storage. Vui lòng tạo bucket '${bucketName}' (chế độ Public) trong Supabase Dashboard hoặc chạy lại schema.sql.`;
+      }
+      return { url: null, error: errorMsg };
+    }
+
+    const { data: publicData } = client.storage
+      .from(bucketName)
+      .getPublicUrl(data.path);
+
+    return { url: publicData.publicUrl };
+  } catch (err: any) {
+    console.error('Upload exception:', err);
+    return { url: null, error: err.message || 'Lỗi ngoại lệ khi tải ảnh lên Supabase' };
+  }
+}

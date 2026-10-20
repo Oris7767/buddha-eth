@@ -31,15 +31,21 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-public-key
 ```
 
-### Chạy SQL Migration Khởi Tạo Bảng:
-Toàn bộ mã SQL đã được tạo sẵn tại file `supabase/schema.sql`. Bạn chỉ cần:
+### Chạy SQL Migration Khởi Tạo Bảng & Storage Bucket:
+Toàn bộ mã SQL cho bài viết, bình luận và Supabase Storage (`blog-images`) đã được tạo sẵn tại file `supabase/schema.sql`. Bạn chỉ cần:
 1. Truy cập [Supabase Dashboard](https://supabase.com/dashboard) -> Chọn dự án của bạn.
 2. Vào mục **SQL Editor** -> Bấm **New query**.
 3. Dán toàn bộ nội dung trong [supabase/schema.sql](file:///Users/kimssa/Documents/I%20have%201M%20Capital/buddhas-eth/supabase/schema.sql) và bấm **Run**.
 
+*(Lệnh SQL trên sẽ tự động tạo bảng `posts`, `comments` và Storage Bucket `blog-images` ở chế độ Public với đầy đủ chính sách phân quyền RLS).*
+
 ---
 
-## 3. Trình Soạn Thảo WordPress-style & Tối Ưu SEO
+## 3. Trình Soạn Thảo WordPress-style, Tải Ảnh Lên Supabase & SEO
+- **Tải ảnh lên Supabase**:
+  - **Ảnh bìa bài viết**: Bấm nút **"Tải ảnh từ máy lên Supabase"** ở thanh điều khiển bên phải.
+  - **Ảnh trong thân bài**: Bấm nút **"Tải & Chèn Ảnh"** trên thanh công cụ soạn thảo, hoặc trực tiếp **dán ảnh từ clipboard (Ctrl+V / Cmd+V)** ngay trong khung soạn thảo!
+  - Ảnh tự động được lưu trữ tại bucket `blog-images` trên Supabase Storage và phân phát qua CDN tốc độ cao.
 
 - **Soạn thảo trực tiếp**: Bấm nút **"Viết Bài Mới"** trên menu.
 - **Chế độ xem linh hoạt**: Hỗ trợ xem Soạn thảo, Xem chia đôi (Split view), và Xem trước bản in.
