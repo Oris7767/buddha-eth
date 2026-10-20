@@ -10,7 +10,7 @@
  *   Netlify rewrites: /post/:slug -> /post-:slug.html (HTTP 200, clean URL, no redirects)
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,7 +38,25 @@ if (!process.env.VITE_SUPABASE_URL && existsSync(join(rootDir, '.env'))) {
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
+
+// Bài đã xoá vĩnh viễn (do scripts/delete_posts.mjs ghi vào) — không bao giờ sinh trang lại
+function readDeletedIds() {
+  const p = join(rootDir, 'public', 'deleted-post-ids.json');
+  try {
+    if (existsSync(p)) {
+      const data = JSON.parse(readFileSync(p, 'utf8'));
+      return new Set(Array.isArray(data) ? data.map(String) : []);
+    }
+  } catch (err) {
+    console.warn('  ⚠️  Không đọc được deleted-post-ids.json:', err.message);
+  }
+  return new Set();
+}
+
 async function fetchPosts() {
+  const deleted = readDeletedIds();
+  const keep = (p) => !deleted.has(String(p.id));
+
   if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('placeholder')) {
     try {
       const url = `${SUPABASE_URL}/rest/v1/posts?select=*&status=eq.published&order=created_at.desc`;
@@ -51,7 +69,7 @@ async function fetchPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.length > 0) return data;
+        if (data && data.length > 0) return data.filter(keep);
       }
     } catch (err) {
       console.warn('  ⚠️  Could not fetch posts from Supabase REST API:', err.message);
@@ -63,7 +81,7 @@ async function fetchPosts() {
     const archivePath = join(rootDir, 'public', 'archive-posts.json');
     if (existsSync(archivePath)) {
       const all = JSON.parse(readFileSync(archivePath, 'utf8'));
-      return all.filter(p => p.status === 'published' && p.slug);
+      return all.filter(p => p.status === 'published' && p.slug && keep(p));
     }
   } catch (err) {
     console.warn('  ⚠️  Could not read archive-posts.json:', err.message);
@@ -284,6 +302,7 @@ async function main() {
 
   const template = readFileSync(templatePath, 'utf8');
   const posts = await fetchPosts();
+  const expectedFiles = new Set(posts.filter(p => p.slug).map(p => `post-${p.slug}.html`));
 
   let generated = 0;
   for (const post of posts) {
@@ -297,6 +316,16 @@ async function main() {
     generated++;
   }
 
+  // Dọn trang tĩnh mồ côi: bài đã xoá / unpublish nhưng file cũ còn trong dist
+  let pruned = 0;
+  for (const file of readdirSync(distDir)) {
+    if (!file.startsWith('post-') || !file.endsWith('.html')) continue;
+    if (expectedFiles.has(file)) continue;
+    unlinkSync(join(distDir, file));
+    pruned++;
+    console.log(`  🗑  Removed stale ${file}`);
+  }
+
   // Generate /gioi-thieu (about the author) prerender
   const authorPath = join(distDir, 'gioi-thieu.html');
   writeFileSync(authorPath, generateAuthorHtml(template), 'utf8');
@@ -308,6 +337,7 @@ async function main() {
   console.log(`  ✅ Generated /.404.html`);
 
   console.log(`  📊 Pre-rendered ${generated} article pages for Googlebot and social previews`);
+  if (pruned) console.log(`  🗑  Pruned ${pruned} stale article pages (bài đã xoá)`);
   console.log('✨ [generate-static-pages] Done!\n');
 }
 

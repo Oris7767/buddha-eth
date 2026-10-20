@@ -36,6 +36,22 @@ if (!process.env.VITE_SUPABASE_URL && existsSync(join(rootDir, '.env'))) {
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
+const TODAY = new Date().toISOString().split('T')[0];
+
+// Bài đã xoá vĩnh viễn — không được xuất hiện trong sitemap
+function readDeletedIds() {
+  try {
+    const p = join(rootDir, 'public', 'deleted-post-ids.json');
+    if (existsSync(p)) {
+      const data = JSON.parse(readFileSync(p, 'utf8'));
+      return new Set(Array.isArray(data) ? data.map(String) : []);
+    }
+  } catch (err) {
+    console.warn('  ⚠️  Không đọc được deleted-post-ids.json:', err.message);
+  }
+  return new Set();
+}
+
 function escapeXml(text) {
   return String(text)
     .replace(/&/g, '&amp;')
@@ -73,12 +89,13 @@ async function fetchPostsFromSupabase() {
 }
 
 function getFallbackPosts() {
+  const deletedIds = readDeletedIds();
   try {
     const archivePath = join(rootDir, 'public', 'archive-posts.json');
     if (existsSync(archivePath)) {
       const all = JSON.parse(readFileSync(archivePath, 'utf8'));
       return all
-        .filter(p => p.status === 'published' && p.slug && !['all', 'chiem-tinh-ve-da', 'chiem-tinh-noi-mon', 'triet-hoc-tinh-thuc', 'tam-ly-hoc-chieu-sau', 'chu-ky-vu-tru-thoi-cuoc'].includes(p.slug))
+        .filter(p => p.status === 'published' && p.slug && !deletedIds.has(String(p.id)) && !['all', 'chiem-tinh-ve-da', 'chiem-tinh-noi-mon', 'triet-hoc-tinh-thuc', 'tam-ly-hoc-chieu-sau', 'chu-ky-vu-tru-thoi-cuoc'].includes(p.slug))
         .map(p => ({
           slug: p.slug,
           created_at: p.created_at || TODAY,
@@ -91,7 +108,6 @@ function getFallbackPosts() {
   return [];
 }
 
-const TODAY = new Date().toISOString().split('T')[0];
 
 function buildSitemap(posts, newestPostDate) {
   const lines = [
@@ -149,7 +165,8 @@ async function main() {
   try {
     const remotePosts = await fetchPostsFromSupabase();
     if (remotePosts && remotePosts.length > 0) {
-      posts = remotePosts;
+      const deletedIds = readDeletedIds();
+      posts = remotePosts.filter(p => !deletedIds.has(String(p.id)));
       console.log(`  ✅ Fetched ${posts.length} published posts from Supabase`);
     } else {
       posts = getFallbackPosts();

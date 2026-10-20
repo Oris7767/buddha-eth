@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import os
 import re
 import unicodedata
@@ -300,9 +301,17 @@ def main() -> None:
     used: set[str] = set()
     seen_text: set[str] = set()
     excluded: set[str] = set()
+    # Luôn đọc danh sách xoá vĩnh viễn trong repo (do scripts/delete_posts.mjs ghi)
+    default_exclude = Path(__file__).resolve().parent.parent / "public" / "deleted-post-ids.json"
+    if default_exclude.exists():
+        try:
+            excluded |= set(json.load(open(default_exclude)))
+        except Exception as e:
+            print(f"⚠️  không đọc được {default_exclude.name}: {e}")
     if args.exclude_ids:
-        excluded = set(json.load(open(args.exclude_ids)))
-        print(f"loại trừ {len(excluded)} id đã xoá trên web")
+        excluded |= set(json.load(open(args.exclude_ids)))
+    if excluded:
+        print(f"loại trừ {len(excluded)} id đã xoá vĩnh viễn")
     posts, skipped = [], Counter()
     for ch in chains:
         if f"tw-{ch[0]['id']}" in excluded:

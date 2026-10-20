@@ -80,8 +80,35 @@ function saveLocalPosts(posts: Post[]): void {
 }
 
 // ----------------- XOÁ / SỬA BÀI ARCHIVE NGAY TRÊN WEB -----------------
-// Bài cào từ X nằm trong archive-posts.json (file tĩnh). Muốn xoá/sửa mà không đụng
-// code, ta lưu danh sách id đã xoá + các field đã sửa vào localStorage của trình duyệt.
+// Có 2 tầng:
+//  1. XOÁ VĨNH VIỄN (server-side): public/deleted-post-ids.json — do
+//     scripts/delete_posts.mjs sinh ra, áp dụng cho MỌI người truy cập, mọi thiết bị.
+//  2. Ẩn tạm trên trình duyệt (localStorage): chỉ để thử nhanh, không có giá trị công khai.
+
+// --- Tầng 1: danh sách xoá vĩnh viễn, tải từ server (deployed cùng website) ---
+let permanentHiddenCache: string[] | null = null;
+
+export async function getPermanentHiddenIds(): Promise<string[]> {
+  if (permanentHiddenCache) return permanentHiddenCache;
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}deleted-post-ids.json`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      permanentHiddenCache = Array.isArray(data) ? data.filter((x: unknown): x is string => typeof x === 'string') : [];
+    } else {
+      permanentHiddenCache = [];
+    }
+  } catch {
+    permanentHiddenCache = [];
+  }
+  return permanentHiddenCache;
+}
+
+/** Hợp của danh sách xoá vĩnh viễn (server) + ẩn tạm (localStorage). */
+export async function getAllHiddenPostIds(): Promise<string[]> {
+  const [permanent, local] = [await getPermanentHiddenIds(), getHiddenPostIds()];
+  return Array.from(new Set([...permanent, ...local]));
+}
 
 export function getHiddenPostIds(): string[] {
   try {
@@ -141,9 +168,11 @@ export async function getArchivePosts(includeHidden = false): Promise<Post[]> {
       archiveCache = [];
     }
   }
-  if (includeHidden) return archiveCache;
+  const permanent = new Set(await getPermanentHiddenIds());
+  const visible = archiveCache.filter((p) => !permanent.has(p.id));
+  if (includeHidden) return visible;
   const hidden = new Set(getHiddenPostIds());
-  return archiveCache.filter((p) => !hidden.has(p.id));
+  return visible.filter((p) => !hidden.has(p.id));
 }
 
 function mergePosts(archive: Post[], local: Post[]): Post[] {

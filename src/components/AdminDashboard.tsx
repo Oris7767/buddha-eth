@@ -16,7 +16,15 @@ import {
   RotateCcw,
   ArchiveRestore
 } from 'lucide-react';
-import { deletePost, updatePost, getHiddenPostIds, getArchivePosts, unhidePost, restoreAllHiddenPosts } from '../lib/supabase';
+import {
+  deletePost,
+  updatePost,
+  getHiddenPostIds,
+  getPermanentHiddenIds,
+  getArchivePosts,
+  unhidePost,
+  restoreAllHiddenPosts
+} from '../lib/supabase';
 
 interface AdminDashboardProps {
   posts: Post[];
@@ -41,9 +49,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminSearch, setAdminSearch] = useState('');
   const [hiddenPosts, setHiddenPosts] = useState<Post[]>([]);
   const [showHidden, setShowHidden] = useState(false);
+  const [permanentIds, setPermanentIds] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
+      setPermanentIds(await getPermanentHiddenIds());
       const ids = getHiddenPostIds();
       if (!ids.length) {
         setHiddenPosts([]);
@@ -94,7 +104,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
 
   const handleDelete = async (post: Post) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa bài viết "${post.title}" không? Hành động này không thể hoàn tác.`)) {
+    const msg = isSupabaseConnected
+      ? `Xoá vĩnh viễn bài "${post.title}" khỏi database? Hành động này không thể hoàn tác.`
+      : `Xoá bài "${post.title}" khỏi website?\n\nLưu ý: ở chế độ chưa nối Supabase, nút này chỉ ẩn trên trình duyệt hiện tại. Muốn xoá thật với mọi người, sau khi bấm xoá hãy bấm "Tải danh sách xoá" rồi nhắn chị Carmen áp dụng + build lại.`;
+    if (confirm(msg)) {
       await deletePost(post.id);
       onPostDeleted(post.id);
     }
@@ -262,7 +275,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="btn-classic-secondary"
                 style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem' }}
               >
-                Tải ID
+                Tải danh sách xoá
               </button>
             </span>
           </div>
@@ -296,6 +309,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* Bài đã xoá vĩnh viễn (áp dụng cho mọi người truy cập) */}
+      {permanentIds.length > 0 && (
+        <div
+          style={{
+            border: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--bg-secondary)',
+            padding: '0.9rem 1.1rem',
+            marginBottom: '1.75rem',
+            fontSize: '0.88rem',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          <strong>{permanentIds.length}</strong> bài đã xoá vĩnh viễn khỏi website — không ai đọc được nữa (kể cả máy khác, trình duyệt khác).
+          {' '}Muốn khôi phục thì phải import lại dữ liệu gốc rồi bỏ id khỏi <code>public/deleted-post-ids.json</code>.
         </div>
       )}
 
